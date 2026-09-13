@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathX Pro — Advanced Calculator</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+:root{
+  --bg:#070b16;
+  --panel:rgba(17,24,39,.82);
+  --panel2:#0d1424;
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --line:#263246;
+  --accent:#7c3aed;
+  --accent2:#06b6d4;
+  --green:#22c55e;
+  --danger:#ef4444;
+}
+
+body{
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 15% 10%,#24316b 0,transparent 32%),
+    radial-gradient(circle at 90% 20%,#164e63 0,transparent 28%),
+    var(--bg);
+  color:var(--text);
+  padding:22px;
+}
+
+.app{
+  max-width:1250px;
+  margin:auto;
+}
+
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  margin-bottom:18px;
+}
+
+.logo{
+  font-size:25px;
+  font-weight:800;
+}
+
+.logo span{
+  color:#a78bfa;
+}
+
+.badges{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.badge{
+  padding:7px 11px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#0f172a;
+  color:#cbd5e1;
+  font-size:12px;
+}
+
+.layout{
+  display:block;
+  max-width:820px;
+  margin:auto;
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:24px;
+  box-shadow:0 24px 80px rgba(0,0,0,.35);
+  backdrop-filter:blur(18px);
+}
+
+.calc{
+  padding:20px;
+}
+
+.display{
+  min-height:155px;
+  background:linear-gradient(145deg,#050914,#10182b);
+  border:1px solid var(--line);
+  border-radius:19px;
+  padding:17px;
+  margin-bottom:15px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+
+.expr{
+  color:var(--muted);
+  font-size:14px;
+  min-height:22px;
+  text-align:right;
+  overflow:auto;
+  white-space:nowrap;
+}
+
+.answer{
+  font-size:40px;
+  font-weight:700;
+  text-align:right;
+  margin-top:8px;
+  overflow:auto;
+  white-space:nowrap;
+}
+
+.preview{
+  font-size:12px;
+  color:#67e8f9;
+  text-align:right;
+  margin-top:7px;
+  min-height:17px;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  overflow:auto;
+  margin-bottom:12px;
+}
+
+.tab{
+  background:#111827;
+  color:#cbd5e1;
+  border:1px solid var(--line);
+  padding:9px 13px;
+  border-radius:10px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.tab.active{
+  background:#312e81;
+  border-color:#7c3aed;
+  color:white;
+}
+
+/* Standard Calculator Layout */
+.keypad{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:9px;
+}
+
+button{
+  font:inherit;
+}
+
+.key{
+  border:1px solid #273449;
+  background:#172033;
+  color:#f8fafc;
+  border-radius:13px;
+  min-height:52px;
+  cursor:pointer;
+  transition:.15s;
+  box-shadow:inset 0 1px rgba(255,255,255,.03);
+}
+
+.key:hover{
+  transform:translateY(-2px);
+  background:#202c43;
+}
+
+.key:active{
+  transform:scale(.96);
+}
+
+.op{
+  background:#27205a;
+  border-color:#4c3a9b;
+}
+
+.accent{
+  background:linear-gradient(135deg,#7c3aed,#2563eb);
+  border:0;
+}
+
+.danger{
+  background:#3a1720;
+  color:#fecaca;
+}
+
+.fn{
+  background:#12283a;
+  color:#a5f3fc;
+}
+
+/* Kept for the rest of the original project */
+.wide{
+  grid-column:auto;
+}
+
+.panel{
+  padding:20px;
+}
+
+.feature-strip{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin:0 0 12px;
+}
+
+.feature-strip span{
+  font-size:11px;
+  color:#cbd5e1;
+  border:1px solid var(--line);
+  background:#0d1626;
+  padding:6px 9px;
+  border-radius:999px;
+}
+
+.panel h2{
+  font-size:18px;
+  margin-bottom:12px;
+}
+
+.section{
+  margin-bottom:20px;
+}
+
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:9px;
+}
+
+.small{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.history{
+  max-height:380px;
+  overflow:auto;
+}
+
+.history-item{
+  padding:11px 0;
+  border-bottom:1px solid var(--line);
+  cursor:pointer;
+}
+
+.history-item:hover{
+  color:#c4b5fd;
+}
+
+.history-item .h-exp{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.history-item .h-res{
+  font-size:17px;
+  margin-top:3px;
+}
+
+.tools{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+
+.tool{
+  padding:11px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#111827;
+  color:#e2e8f0;
+  cursor:pointer;
+  text-align:left;
+}
+
+.tool b{
+  display:block;
+  color:white;
+  margin-bottom:3px;
+}
+
+select,
+input{
+  width:100%;
+  background:#0b1220;
+  border:1px solid var(--line);
+  color:white;
+  border-radius:10px;
+  padding:10px;
+  margin-top:6px;
+}
+
+.resultbox{
+  background:#08111f;
+  border:1px solid var(--line);
+  padding:12px;
+  border-radius:12px;
+  margin-top:10px;
+  line-height:1.7;
+}
+
+.footer{
+  color:#64748b;
+  text-align:center;
+  margin-top:15px;
+  font-size:12px;
+}
+
+@media(max-width:560px){
+
+  body{
+    padding:10px;
+  }
+
+  .keypad{
+    grid-template-columns:repeat(4,1fr);
+  }
+
+  .key{
+    min-height:48px;
+  }
+
+  .wide{
+    grid-column:auto;
+  }
+
+  .answer{
+    font-size:31px;
+  }
+
+  .badges{
+    display:none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+  <div class="logo">Math<span>X</span> Pro</div>
+
+  <div class="badges">
+    <div class="badge">Scientific</div>
+    <div class="badge">Statistics</div>
+    <div class="badge">Unit Converter</div>
+    <div class="badge">Graphing</div>
+  </div>
+</header>
+
+<div class="layout">
+
+<main class="card calc">
+
+<div class="display">
+  <div id="expr" class="expr">Ready</div>
+  <div id="answer" class="answer">0</div>
+  <div id="preview" class="preview"></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="mode('basic',this)">
+    Basic
+  </button>
+
+  <button class="tab" onclick="mode('scientific',this)">
+    Scientific
+  </button>
+
+  <button class="tab" onclick="mode('programmer',this)">
+    Programmer
+  </button>
+</div>
+
+<div class="feature-strip">
+  <span>Scientific</span>
+  <span>Trigonometry</span>
+  <span>Statistics</span>
+  <span>Equations</span>
+  <span>Converter</span>
+</div>
+
+<div id="keypad" class="keypad"></div>
+
+</main>
+
+</div>
+
+<div class="footer">
+  MathX Pro • Advanced Mathematics Calculator • HTML5 + CSS3 + JavaScript
+</div>
+
+</div>
+
+
+<script>
+
+let current="0",
+    stored=null,
+    op=null,
+    reset=false,
+    angle="DEG",
+    hist=[];
+
+const exprEl=document.getElementById("expr");
+const ansEl=document.getElementById("answer");
+const prevEl=document.getElementById("preview");
+const keypad=document.getElementById("keypad");
+
+
+/* BASIC CALCULATOR BUTTONS */
+
+const basic=[
+
+  ["AC","danger","clear()"],
+  ["⌫","","back()"],
+  ["%","fn","percent()"],
+  ["÷","op","choose('/')"],
+
+  ["7","","num('7')"],
+  ["8","","num('8')"],
+  ["9","","num('9')"],
+  ["×","op","choose('*')"],
+
+  ["4","","num('4')"],
+  ["5","","num('5')"],
+  ["6","","num('6')"],
+  ["−","op","choose('-')"],
+
+  ["1","","num('1')"],
+  ["2","","num('2')"],
+  ["3","","num('3')"],
+  ["+","op","choose('+')"],
+
+  ["0","","num('0')"],
+  [".","fn","dot()"],
+  ["±","fn","sign()"],
+  ["=","accent","calc()"]
+
+];
+
+
+/* SCIENTIFIC BUTTONS */
+
+const sci=[
+
+  ["sin","fn","func('sin')"],
+  ["cos","fn","func('cos')"],
+  ["tan","fn","func('tan')"],
+  ["log","fn","func('log')"],
+
+  ["ln","fn","func('ln')"],
+  ["√","fn","func('sqrt')"],
+  ["x²","fn","square()"],
+  ["xʸ","fn","choose('^')"],
+
+  ["π","fn","constVal(Math.PI)"],
+  ["e","fn","constVal(Math.E)"],
+  ["n!","fn","factorialCurrent()"],
+  ["±","fn","sign()"],
+
+  ...basic
+
+];
+
+
+/* PROGRAMMER BUTTONS */
+
+const prog=[
+
+  ["AND","fn","bit('&')"],
+  ["OR","fn","bit('|')"],
+  ["XOR","fn","bit('^')"],
+  ["NOT","fn","notBit()"],
+
+  ["<<","fn","shift('<<')"],
+  [">>","fn","shift('>>')"],
+  ["0x","fn","prefix('0x')"],
+  ["0b","fn","prefix('0b')"],
+
+  ...basic
+
+];
+
+
+/* SHOW KEYPAD */
+
+function render(modeName="basic"){
+
+  let arr =
+    modeName==="scientific"
+      ? sci
+      : modeName==="programmer"
+      ? prog
+      : basic;
+
+  keypad.innerHTML=arr.map(x=>`
+    <button
+      class="key ${x[1]}"
+      onclick="${x[2]}"
+    >
+      ${x[0]}
+    </button>
+  `).join("");
+
+}
+
+
+/* CHANGE MODE */
+
+function mode(m,b){
+
+  document
+    .querySelectorAll(".tab")
+    .forEach(x=>x.classList.remove("active"));
+
+  b.classList.add("active");
+
+  render(m);
+
+}
+
+
+/* UPDATE DISPLAY */
+
+function update(){
+
+  ansEl.textContent=current;
+
+  exprEl.textContent =
+    stored!==null && op
+      ? `${fmt(stored)} ${sym(op)}`
+      : "";
+
+  if(current!=="Error"){
+    prevEl.textContent="";
+  }
+
+}
+
+
+/* FORMAT NUMBER */
+
+function fmt(n){
+
+  return Number(n).toLocaleString(
+    "en-US",
+    {
+      maximumFractionDigits:10
+    }
+  );
+
+}
+
+
+/* OPERATOR SYMBOL */
+
+function sym(x){
+
+  return x==="*" ? "×"
+       : x==="/" ? "÷"
+       : x==="-" ? "−"
+       : x==="^" ? "^"
+       : x;
+
+}
+
+
+/* NUMBER */
+
+function num(n){
+
+  if(reset || current==="Error"){
+
+    current=n;
+    reset=false;
+
+  }
+  else{
+
+    current =
+      current==="0"
+        ? n
+        : current+n;
+
+  }
+
+  update();
+
+}
+
+
+/* DECIMAL */
+
+function dot(){
+
+  if(reset || current==="Error"){
+
+    current="0.";
+    reset=false;
+
+  }
+  else if(!current.includes(".")){
+
+    current+=".";
+
+  }
+
+  update();
+
+}
+
+
+/* OPERATOR */
+
+function choose(x){
+
+  if(current==="Error"){
+    return clear();
+  }
+
+  if(stored!==null && op && !reset){
+    calc();
+  }
+
+  stored=parseFloat(current);
+  op=x;
+  reset=true;
+
+  update();
+
+}
+
+
+/* CALCULATE */
+
+function calc(){
+
+  if(stored===null || !op){
+    return;
+  }
+
+  let a=stored;
+  let b=parseFloat(current);
+  let r;
+
+  if(op==="+") r=a+b;
+  if(op==="-") r=a-b;
+  if(op==="*") r=a*b;
+  if(op==="/") r=b===0 ? null : a/b;
+  if(op==="^") r=Math.pow(a,b);
+
+  let ex=
+    `${fmt(a)} ${sym(op)} ${fmt(b)}`;
+
+  if(
+    r===null ||
+    !Number.isFinite(r)
+  ){
+
+    current="Error";
+
+  }
+  else{
+
+    current=
+      String(
+        Number(
+          r.toFixed(12)
+        )
+      );
+
+    addHist(ex,current);
+
+  }
+
+  stored=null;
+  op=null;
+  reset=true;
+
+  exprEl.textContent=ex;
+  ansEl.textContent=current;
+  prevEl.textContent="";
+
+}
+
+
+/* CLEAR */
+
+function clear(){
+
+  current="0";
+  stored=null;
+  op=null;
+  reset=false;
+
+  update();
+
+}
+
+
+/* BACKSPACE */
+
+function back(){
+
+  if(
+    reset ||
+    current==="Error"
+  ){
+    return;
+  }
+
+  current=
+    current.length>1
+      ? current.slice(0,-1)
+      : "0";
+
+  update();
+
+}
+
+
+/* PERCENT */
+
+function percent(){
+
+  current=
+    String(
+      parseFloat(current)/100
+    );
+
+  update();
+
+}
+
+
+/* PLUS / MINUS */
+
+function sign(){
+
+  current=
+    String(
+      -parseFloat(current)
+    );
+
+  update();
+
+}
+
+
+/* CONSTANT */
+
+function constVal(v){
+
+  current=String(v);
+  reset=true;
+
+  update();
+
+}
+
+
+/* SQUARE */
+
+function square(){
+
+  current=
+    String(
+      Math.pow(
+        parseFloat(current),
+        2
+      )
+    );
+
+  reset=true;
+
+  update();
+
+}
+
+
+/* SCIENTIFIC FUNCTIONS */
+
+function func(f){
+
+  let x=parseFloat(current);
+  let r;
+
+  if(f==="sin")
+    r=Math.sin(
+      (x*Math.PI)/180
+    );
+
+  if(f==="cos")
+    r=Math.cos(
+      (x*Math.PI)/180
+    );
+
+  if(f==="tan")
+    r=Math.tan(
+      (x*Math.PI)/180
+    );
+
+  if(f==="log")
+    r=Math.log10(x);
+
+  if(f==="ln")
+    r=Math.log(x);
+
+  if(f==="sqrt")
+    r=Math.sqrt(x);
+
+  if(!Number.isFinite(r)){
+
+    current="Error";
+
+  }
+  else{
+
+    let old=
+      `${f}(${fmt(x)})`;
+
+    current=
+      String(
+        Number(
+          r.toFixed(12)
+        )
+      );
+
+    addHist(old,current);
+
+  }
+
+  reset=true;
+
+  update();
+
+}
+
+
+/* FACTORIAL */
+
+function factorial(n){
+
+  if(
+    n<0 ||
+    n>170 ||
+    !Number.isInteger(n)
+  ){
+    return null;
+  }
+
+  let r=1;
+
+  for(
+    let i=2;
+    i<=n;
+    i++
+  ){
+    r*=i;
+  }
+
+  return r;
+
+}
+
+
+/* CURRENT FACTORIAL */
+
+function factorialCurrent(){
+
+  let x=parseFloat(current);
+  let r=factorial(x);
+
+  if(r===null){
+
+    current="Error";
+
+  }
+  else{
+
+    current=String(r);
+
+    addHist(
+      `${x}!`,
+      current
+    );
+
+  }
+
+  reset=true;
+
+  update();
+
+}
+
+
+/* PROGRAMMER FUNCTIONS */
+
+function bit(o){
+
+  let a=parseInt(current)||0;
+
+  stored=a;
+  op=o;
+  reset=true;
+
+}
+
+
+function notBit(){
+
+  current=
+    String(
+      ~(parseInt(current)||0)
+    );
+
+  reset=true;
+
+  update();
+
+}
+
+
+function shift(o){
+
+  stored=
+    parseInt(current)||0;
+
+  op=o;
+  reset=true;
+
+}
+
+
+function prefix(p){
+
+  current=p;
+  reset=false;
+
+  update();
+
+}
+
+
+/* HISTORY */
+
+function addHist(ex,r){
+
+  hist.unshift({
+    ex,
+    r
+  });
+
+  hist=
+    hist.slice(0,20);
+
+  renderHistory();
+
+}
+
+
+function renderHistory(){
+
+  const history=
+    document.getElementById("history");
+
+  if(!history){
+    return;
+  }
+
+  history.innerHTML=
+    hist.length
+      ? hist.map(
+          (h,i)=>`
+          <div
+            class="history-item"
+            onclick="current='${h.r}';reset=true;update()"
+          >
+            <div class="h-exp">
+              ${h.ex}
+            </div>
+
+            <div class="h-res">
+              = ${h.r}
+            </div>
+
+          </div>
+          `
+        ).join("")
+      : `<div class="small">
+          No calculations yet.
+        </div>`;
+
+}
+
+
+function clearHistory(){
+
+  hist=[];
+
+  renderHistory();
+
+}
+
+
+/* MATH TOOLS */
+
+function openTool(t){
+
+  const box=
+    document.getElementById("toolbox");
+
+  if(!box){
+    return;
+  }
+
+
+  if(t==="quadratic")
+
+    box.innerHTML=`
+
+      <h2>Quadratic Solver</h2>
+
+      <div class="small">
+        Solve ax² + bx + c = 0
+      </div>
+
+      <input
+        id="qa"
+        placeholder="a"
+      >
+
+      <input
+        id="qb"
+        placeholder="b"
+      >
+
+      <input
+        id="qc"
+        placeholder="c"
+      >
+
+      <button
+        class="key accent"
+        style="width:100%;margin-top:8px"
+        onclick="solveQuad()"
+      >
+        Solve
+      </button>
+
+      <div
+        id="toolresult"
+        class="resultbox"
+      ></div>
+
+    `;
+
+
+  if(t==="percentage")
+
+    box.innerHTML=`
+
+      <h2>Percentage</h2>
+
+      <input
+        id="pv"
+        placeholder="Value"
+      >
+
+      <input
+        id="pp"
+        placeholder="Percentage"
+      >
+
+      <button
+        class="key accent"
+        style="width:100%;margin-top:8px"
+        onclick="solvePercent()"
+      >
+        Calculate
+      </button>
+
+      <div
+        id="toolresult"
+        class="resultbox"
+      ></div>
+
+    `;
+
+
+  if(t==="factorial")
+
+    box.innerHTML=`
+
+      <h2>Factorial</h2>
+
+      <input
+        id="fnv"
+        type="number"
+        placeholder="Enter integer n"
+      >
+
+      <button
+        class="key accent"
+        style="width:100%;margin-top:8px"
+        onclick="solveFact()"
+      >
+        Calculate n!
+      </button>
+
+      <div
+        id="toolresult"
+        class="resultbox"
+      ></div>
+
+    `;
+
+
+  if(t==="gcd")
+
+    box.innerHTML=`
+
+      <h2>GCD / LCM</h2>
+
+      <input
+        id="ga"
+        placeholder="First integer"
+      >
+
+      <input
+        id="gb"
+        placeholder="Second integer"
+      >
+
+      <button
+        class="key accent"
+        style="width:100%;margin-top:8px"
+        onclick="solveGcd()"
+      >
+        Calculate
+      </button>
+
+      <div
+        id="toolresult"
+        class="resultbox"
+      ></div>
+
+    `;
+
+
+  if(t==="converter")
+
+    box.innerHTML=`
+
+      <h2>Unit Converter</h2>
+
+      <select id="ct">
+
+        <option>
+          km → miles
+        </option>
+
+        <option>
+          miles → km
+        </option>
+
+        <option>
+          kg → lb
+        </option>
+
+        <option>
+          lb → kg
+        </option>
+
+        <option>
+          °C → °F
+        </option>
+
+        <option>
+          °F → °C
+        </option>
+
+      </select>
+
+      <input
+        id="cv"
+        placeholder="Value"
+      >
+
+      <button
+        class="key accent"
+        style="width:100%;margin-top:8px"
+        onclick="convert()"
+      >
+        Convert
+      </button>
+
+      <div
+        id="toolresult"
+        class="resultbox"
+      ></div>
+
+    `;
+
+
+  if(t==="statistics")
+
+    box.innerHTML=`
+
+      <h2>Statistics</h2>
+
+      <div class="small">
+        Enter numbers separated by commas
+      </div>
+
+      <input
+        id="sv"
+        placeholder="10, 20, 30, 40"
+      >
+
+      <button
+        class="key accent"
+        style="width:100%;margin-top:8px"
+        onclick="stats()"
+      >
+        Analyze
+      </button>
+
+      <div
+        id="toolresult"
+        class="resultbox"
+      ></div>
+
+    `;
+
+}
+
+
+/* TOOL OUTPUT */
+
+function out(s){
+
+  const result=
+    document.getElementById(
+      "toolresult"
+    );
+
+  if(result){
+    result.innerHTML=s;
+  }
+
+}
+
+
+/* QUADRATIC */
+
+function solveQuad(){
+
+  let a=+qa.value;
+  let b=+qb.value;
+  let c=+qc.value;
+
+  let d=
+    b*b-4*a*c;
+
+  if(!a)
+    return out(
+      "a cannot be 0."
+    );
+
+  if(d<0)
+    return out(
+      "Complex roots: no real solutions."
+    );
+
+  let x1=
+    (-b+Math.sqrt(d))/(2*a);
+
+  let x2=
+    (-b-Math.sqrt(d))/(2*a);
+
+  out(`
+    Discriminant = ${d}<br>
+    x₁ = ${x1}<br>
+    x₂ = ${x2}
+  `);
+
+}
+
+
+/* PERCENTAGE TOOL */
+
+function solvePercent(){
+
+  let v=+pv.value;
+  let p=+pp.value;
+
+  out(`
+    ${p}% of ${v}
+    =
+    <b>${v*p/100}</b>
+  `);
+
+}
+
+
+/* FACTORIAL TOOL */
+
+function solveFact(){
+
+  let n=+fnv.value;
+
+  let r=factorial(n);
+
+  out(
+    r===null
+      ? "Enter an integer from 0 to 170."
+      : `${n}! = <b>${r}</b>`
+  );
+
+}
+
+
+/* GCD */
+
+function gcd(a,b){
+
+  while(b){
+
+    [a,b]=[
+      b,
+      a%b
+    ];
+
+  }
+
+  return Math.abs(a);
+
+}
+
+
+/* GCD / LCM */
+
+function solveGcd(){
+
+  let a=
+    parseInt(ga.value);
+
+  let b=
+    parseInt(gb.value);
+
+  let g=
+    gcd(a,b);
+
+  out(`
+    GCD = <b>${g}</b><br>
+    LCM = <b>${Math.abs(a*b)/g}</b>
+  `);
+
+}
+
+
+/* CONVERTER */
+
+function convert(){
+
+  let x=+cv.value;
+  let t=ct.value;
+  let r;
+
+  if(t==="km → miles")
+    r=x*.621371;
+
+  if(t==="miles → km")
+    r=x*1.609344;
+
+  if(t==="kg → lb")
+    r=x*2.2046226218;
+
+  if(t==="lb → kg")
+    r=x*.45359237;
+
+  if(t==="°C → °F")
+    r=x*9/5+32;
+
+  if(t==="°F → °C")
+    r=(x-32)*5/9;
+
+  out(`<b>${r}</b>`);
+
+}
+
+
+/* STATISTICS */
+
+function stats(){
+
+  let a=
+    sv.value
+      .split(",")
+      .map(Number)
+      .filter(Number.isFinite)
+      .sort(
+        (x,y)=>x-y
+      );
+
+  if(!a.length)
+    return out(
+      "Enter valid numbers."
+    );
+
+  let mean=
+    a.reduce(
+      (s,x)=>s+x,
+      0
+    )/a.length;
+
+  let med=
+    a.length%2
+      ? a[(a.length-1)/2]
+      : (
+          a[a.length/2-1]
+          +
+          a[a.length/2]
+        )/2;
+
+  let sd=
+    Math.sqrt(
+      a.reduce(
+        (s,x)=>
+          s+(x-mean)**2,
+        0
+      )/a.length
+    );
+
+  out(`
+    Count = ${a.length}<br>
+    Mean = ${mean}<br>
+    Median = ${med}<br>
+    Min = ${a[0]}<br>
+    Max = ${a[a.length-1]}<br>
+    Population SD = ${sd}
+  `);
+
+}
+
+
+/* KEYBOARD SUPPORT */
+
+document.addEventListener(
+  "keydown",
+  e=>{
+
+    if(/^[0-9]$/.test(e.key))
+      num(e.key);
+
+    else if(e.key==="."){
+      dot();
+    }
+
+    else if(
+      ["+","-","*","/","^"]
+      .includes(e.key)
+    ){
+      choose(e.key);
+    }
+
+    else if(
+      e.key==="Enter" ||
+      e.key==="="
+    ){
+      calc();
+    }
+
+    else if(
+      e.key==="Backspace"
+    ){
+      back();
+    }
+
+    else if(
+      e.key==="Escape"
+    ){
+      clear();
+    }
+
+    else if(
+      e.key==="%"
+    ){
+      percent();
+    }
+
+  }
+);
+
+
+/* START */
+
+render();
+renderHistory();
+
+</script>
+
+</body>
+</html>
