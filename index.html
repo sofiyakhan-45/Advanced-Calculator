@@ -431,7 +431,7 @@ const keypad=document.getElementById("keypad");
 
 const basic=[
 
-  ["AC","danger","clear()"],
+  ["AC","danger","resetCalc()"],
   ["⌫","","back()"],
   ["%","fn","percent()"],
   ["÷","op","choose('/')"],
@@ -540,427 +540,260 @@ function mode(m,b){
 }
 
 
-/* UPDATE DISPLAY */
-
+/* DISPLAY + CALCULATOR ENGINE */
 function update(){
-
-  ansEl.textContent=current;
-
-  exprEl.textContent =
-    stored!==null && op
-      ? `${fmt(stored)} ${sym(op)}`
-      : "";
-
-  if(current!=="Error"){
-    prevEl.textContent="";
-  }
-
+  ansEl.textContent = current;
+  exprEl.textContent = (stored !== null && op)
+    ? `${fmt(stored)} ${sym(op)}` : "Ready";
+  if(current !== "Error") prevEl.textContent = "";
 }
-
-
-/* FORMAT NUMBER */
 
 function fmt(n){
-
-  return Number(n).toLocaleString(
-    "en-US",
-    {
-      maximumFractionDigits:10
-    }
-  );
-
+  if(typeof n === "string" && /^(0x|0b)/i.test(n)) return n;
+  const v = Number(n);
+  if(!Number.isFinite(v)) return String(n);
+  return v.toLocaleString("en-US", {maximumFractionDigits:10});
 }
-
-
-/* OPERATOR SYMBOL */
 
 function sym(x){
-
-  return x==="*" ? "×"
-       : x==="/" ? "÷"
-       : x==="-" ? "−"
-       : x==="^" ? "^"
-       : x;
-
+  return x==="*" ? "×" : x==="/" ? "÷" : x==="-" ? "−" : x;
 }
 
-
-/* NUMBER */
+function cleanResult(r){
+  if(!Number.isFinite(r)) return "Error";
+  return String(Number(r.toFixed(12)));
+}
 
 function num(n){
-
   if(reset || current==="Error"){
-
-    current=n;
+    current=String(n);
     reset=false;
-
+  }else{
+    if(current==="0") current=String(n);
+    else current += String(n);
   }
-  else{
-
-    current =
-      current==="0"
-        ? n
-        : current+n;
-
-  }
-
   update();
-
 }
-
-
-/* DECIMAL */
 
 function dot(){
-
   if(reset || current==="Error"){
-
     current="0.";
     reset=false;
-
+  }else if(!current.includes(".")){
+    current += ".";
   }
-  else if(!current.includes(".")){
-
-    current+=".";
-
-  }
-
   update();
-
 }
 
-
-/* OPERATOR */
-
 function choose(x){
+  if(current==="Error") resetCalc();
 
-  if(current==="Error"){
-    return clear();
-  }
+  const value=parseFloat(current);
+  if(!Number.isFinite(value)) return;
 
-  if(stored!==null && op && !reset){
-    calc();
+  // If an operator is already waiting and the user has entered the second
+  // number, finish that operation first (e.g. 2 + 3 +).
+  if(stored!==null && op!==null && !reset){
+    performCalculation(false);
   }
 
   stored=parseFloat(current);
   op=x;
   reset=true;
-
-  update();
-
+  exprEl.textContent=`${fmt(stored)} ${sym(op)}`;
 }
 
+function performCalculation(saveHistory=true){
+  if(stored===null || op===null) return false;
 
-/* CALCULATE */
-
-function calc(){
-
-  if(stored===null || !op){
-    return;
-  }
-
-  let a=stored;
-  let b=parseFloat(current);
-  let r;
-
-  if(op==="+") r=a+b;
-  if(op==="-") r=a-b;
-  if(op==="*") r=a*b;
-  if(op==="/") r=b===0 ? null : a/b;
-  if(op==="^") r=Math.pow(a,b);
-
-  let ex=
-    `${fmt(a)} ${sym(op)} ${fmt(b)}`;
-
-  if(
-    r===null ||
-    !Number.isFinite(r)
-  ){
-
+  const a=Number(stored);
+  const b=Number(current);
+  if(!Number.isFinite(a) || !Number.isFinite(b)){
     current="Error";
-
-  }
-  else{
-
-    current=
-      String(
-        Number(
-          r.toFixed(12)
-        )
-      );
-
-    addHist(ex,current);
-
+    stored=null; op=null; reset=true;
+    update();
+    return false;
   }
 
+  let r;
+  switch(op){
+    case "+": r=a+b; break;
+    case "-": r=a-b; break;
+    case "*": r=a*b; break;
+    case "/": r=(b===0 ? NaN : a/b); break;
+    case "^": r=Math.pow(a,b); break;
+    case "&": r=(Number.isInteger(a)&&Number.isInteger(b)) ? (a&b) : NaN; break;
+    case "|": r=(Number.isInteger(a)&&Number.isInteger(b)) ? (a|b) : NaN; break;
+    case "XOR": r=(Number.isInteger(a)&&Number.isInteger(b)) ? (a^b) : NaN; break;
+    case "<<": r=(Number.isInteger(a)&&Number.isInteger(b)) ? (a<<b) : NaN; break;
+    case ">>": r=(Number.isInteger(a)&&Number.isInteger(b)) ? (a>>b) : NaN; break;
+    default: r=NaN;
+  }
+
+  const ex=`${fmt(a)} ${sym(op)} ${fmt(b)}`;
+  current=cleanResult(r);
   stored=null;
   op=null;
   reset=true;
-
   exprEl.textContent=ex;
   ansEl.textContent=current;
   prevEl.textContent="";
-
+  if(saveHistory && current!=="Error") addHist(ex,current);
+  return current!=="Error";
 }
 
+function calc(){
+  performCalculation(true);
+}
 
-/* CLEAR */
-
-function clear(){
-
+// Use a unique name so the AC button always calls our calculator reset,
+// without colliding with browser/window functions.
+function resetCalc(){
   current="0";
   stored=null;
   op=null;
   reset=false;
-
-  update();
-
+  exprEl.textContent="Ready";
+  ansEl.textContent="0";
+  prevEl.textContent="";
 }
 
-
-/* BACKSPACE */
+function clear(){ resetCalc(); }
 
 function back(){
-
-  if(
-    reset ||
-    current==="Error"
-  ){
+  if(current==="Error"){
+    resetCalc();
     return;
   }
-
-  current=
-    current.length>1
-      ? current.slice(0,-1)
-      : "0";
-
+  // Backspace after an operator clears the newly started second operand.
+  if(reset){
+    if(stored!==null && op!==null){
+      current="0";
+      reset=false;
+      update();
+    }
+    return;
+  }
+  if(current.length<=1 || (current.length===2 && current.startsWith("-"))){
+    current="0";
+  }else{
+    current=current.slice(0,-1);
+    if(current==="-" || current==="-0") current="0";
+  }
   update();
-
 }
-
-
-/* PERCENT */
 
 function percent(){
+  if(current==="Error") return;
+  const x=parseFloat(current);
+  if(!Number.isFinite(x)) return;
 
-  current=
-    String(
-      parseFloat(current)/100
-    );
-
+  // Normal calculator percentage: 200 + 10% = 220.
+  if(stored!==null && op!==null && (op==="+" || op==="-")){
+    current=String(stored*x/100);
+  }else{
+    current=String(x/100);
+  }
+  reset=false;
   update();
-
 }
-
-
-/* PLUS / MINUS */
 
 function sign(){
-
-  current=
-    String(
-      -parseFloat(current)
-    );
-
+  if(current==="Error") return;
+  const x=parseFloat(current);
+  if(!Number.isFinite(x)) return;
+  current=String(-x);
+  reset=false;
   update();
-
 }
-
-
-/* CONSTANT */
 
 function constVal(v){
-
   current=String(v);
   reset=true;
-
   update();
-
 }
-
-
-/* SQUARE */
 
 function square(){
-
-  current=
-    String(
-      Math.pow(
-        parseFloat(current),
-        2
-      )
-    );
-
+  if(current==="Error") return;
+  const x=parseFloat(current);
+  const r=x*x;
+  current=cleanResult(r);
   reset=true;
-
+  if(current!=="Error") addHist(`${fmt(x)}²`,current);
   update();
-
 }
-
-
-/* SCIENTIFIC FUNCTIONS */
 
 function func(f){
-
-  let x=parseFloat(current);
+  const x=parseFloat(current);
+  if(!Number.isFinite(x)) return;
   let r;
-
-  if(f==="sin")
-    r=Math.sin(
-      (x*Math.PI)/180
-    );
-
-  if(f==="cos")
-    r=Math.cos(
-      (x*Math.PI)/180
-    );
-
-  if(f==="tan")
-    r=Math.tan(
-      (x*Math.PI)/180
-    );
-
-  if(f==="log")
-    r=Math.log10(x);
-
-  if(f==="ln")
-    r=Math.log(x);
-
-  if(f==="sqrt")
-    r=Math.sqrt(x);
-
-  if(!Number.isFinite(r)){
-
-    current="Error";
-
-  }
-  else{
-
-    let old=
-      `${f}(${fmt(x)})`;
-
-    current=
-      String(
-        Number(
-          r.toFixed(12)
-        )
-      );
-
-    addHist(old,current);
-
-  }
-
+  if(f==="sin") r=Math.sin(x*Math.PI/180);
+  if(f==="cos") r=Math.cos(x*Math.PI/180);
+  if(f==="tan") r=Math.tan(x*Math.PI/180);
+  if(f==="log") r=Math.log10(x);
+  if(f==="ln") r=Math.log(x);
+  if(f==="sqrt") r=Math.sqrt(x);
+  if(f==="reciprocal") r=x===0 ? NaN : 1/x;
+  current=cleanResult(r);
   reset=true;
-
+  if(current!=="Error") addHist(`${f}(${fmt(x)})`,current);
   update();
-
 }
-
-
-/* FACTORIAL */
 
 function factorial(n){
-
-  if(
-    n<0 ||
-    n>170 ||
-    !Number.isInteger(n)
-  ){
-    return null;
-  }
-
+  if(n<0 || n>170 || !Number.isInteger(n)) return null;
   let r=1;
-
-  for(
-    let i=2;
-    i<=n;
-    i++
-  ){
-    r*=i;
-  }
-
+  for(let i=2;i<=n;i++) r*=i;
   return r;
-
 }
-
-
-/* CURRENT FACTORIAL */
 
 function factorialCurrent(){
-
-  let x=parseFloat(current);
-  let r=factorial(x);
-
-  if(r===null){
-
-    current="Error";
-
-  }
+  const x=parseFloat(current);
+  const r=factorial(x);
+  if(r===null){ current="Error"; }
   else{
-
     current=String(r);
-
-    addHist(
-      `${x}!`,
-      current
-    );
-
+    addHist(`${x}!`,current);
   }
-
   reset=true;
-
   update();
-
 }
 
-
-/* PROGRAMMER FUNCTIONS */
-
 function bit(o){
-
-  let a=parseInt(current)||0;
-
+  const a=parseInt(current,10);
+  if(!Number.isInteger(a)) return;
   stored=a;
   op=o;
   reset=true;
-
+  update();
 }
-
 
 function notBit(){
-
-  current=
-    String(
-      ~(parseInt(current)||0)
-    );
-
+  const x=parseInt(current,10);
+  if(!Number.isInteger(x)) return;
+  current=String(~x);
   reset=true;
-
   update();
-
 }
-
 
 function shift(o){
-
-  stored=
-    parseInt(current)||0;
-
+  const a=parseInt(current,10);
+  if(!Number.isInteger(a)) return;
+  stored=a;
   op=o;
   reset=true;
-
+  update();
 }
-
 
 function prefix(p){
-
-  current=p;
-  reset=false;
-
+  // Show the prefix as a programmer hint, but never leave a non-number
+  // inside the calculation engine.
+  const x=parseInt(current,10);
+  if(!Number.isInteger(x)) return;
+  current = p==="0x" ? "0x"+x.toString(16).toUpperCase() : "0b"+x.toString(2);
+  reset=true;
   update();
-
 }
-
 
 /* HISTORY */
 
